@@ -1,3 +1,11 @@
+from utils.functions import Installation
+installation = Installation()
+if installation.needsInstallation():
+    print("Installing missing dependencies...")
+    installation.performInstallation()
+    print("Installation complete. Please restart the application.")
+    exit()
+
 from utils.client import AI
 from utils.config import Config
 from colorama import Fore
@@ -39,7 +47,7 @@ $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
 \__|  \__|\________|\__|  \__|\________| \______/ 
                                                   
     {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} (up to date)"}                                               
-    Created by: {Colors.OKBLUE}Mateusz Rudnik (rudnikos3000){Colors.ENDC}
+    Created by: {Colors.OKBLUE}rudnikos3000{Colors.ENDC}
 """)
 
 if update.update:

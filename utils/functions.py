@@ -104,5 +104,45 @@ class Update:
             print(f"Update failed: {e}")
             return False
 
+class Installation:
+    def __init__(self):
+        self.list = []
+        try:
+            import google
+        except ImportError:
+            self.list.append("google")
+        try:
+            import colorama
+        except ImportError:
+            self.list.append("colorama")
+        try:
+            import uuid
+        except ImportError:
+            self.list.append("uuid")
+        try:
+            import zipfile
+        except ImportError:
+            self.list.append("zipfile")
+        try:
+            import contextlib
+        except ImportError:
+            self.list.append("contextlib")
+        try:
+            import io
+        except ImportError:
+            self.list.append("io")
+
+    def needsInstallation(self):
+        return len(self.list) > 0
+    
+    def performInstallation(self):
+        import subprocess
+        try:
+            for package in self.list:
+                subprocess.check_call(["pip", "install", package])
+            return True
+        except Exception as e:
+            print(f"Installation failed: {e}")
+            return False
 
     
