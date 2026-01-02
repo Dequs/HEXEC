@@ -55,6 +55,9 @@ def ParseVersion(v):
 
 def ask(commands):
     print(f"{Colors.OKGREEN}Code to execute:{Colors.ENDC}\n{commands['command']}\n")
+    print(f"{Colors.HEADER}={Colors.ENDC}"*30, "\n")
+    print(f"{Colors.OKBLUE}Explanation:{Colors.ENDC}\n{commands["explanation"]}\n")
+    print(f"{Colors.HEADER}={Colors.ENDC}"*30, "\n")
     confirm = input(
         f"{Colors.WARNING}About to execute code above. Proceed? (y/n): {Colors.ENDC}"
     ).lower()
@@ -114,8 +117,6 @@ class Update:
                 x += part + "." 
             x = x.rstrip(".")
             response = requests.get(f"https://github.com/Dequs/HEXEC/releases/download/{x}/HEXEC-{x}.zip")
-            print(f"https://github.com/Dequs/HEXEC/releases/download/{x}/HEXEC-{x}.zip")
-            print(response.headers['content-type'])
             with open("tmp.zip","wb") as f: f.write(response.content)
             with zipfile.ZipFile("tmp.zip","r") as zip_ref:
                 zip_ref.extractall(".")

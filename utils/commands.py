@@ -11,6 +11,7 @@ class Colors:
     ENDC = Fore.RESET
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    DIVIDER = f"{HEADER}="*30, f"{ENDC}\n"
 
 class CommandExecutor:
     def __init__(self, dryRun=False, safeMode=True, explain=True):

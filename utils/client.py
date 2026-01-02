@@ -47,6 +47,9 @@ class AI:
 
     def getChat(self):
         return self.chat
+    
+    def getChatDir(self):
+        return self.historyDir
 
     def send(self, userInput):
         if self.historyDir is not None:
