@@ -12,16 +12,19 @@ if config.loadConfig() == {}:
 from utils.client import AI
 from colorama import Fore
 from utils.commands import CommandExecutor
-from utils.functions import uuidToText, Update, ask
+from utils.functions import uuidToText, Update, ask, changeConsoleTitle
 import contextlib
 import io
 import os
-import ctypes
 import time
 import shutil
+from prompt_toolkit.formatted_text import ANSI
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import WordCompleter
 
 os.system("cls")
-ctypes.windll.kernel32.SetConsoleTitleW("HEXEC - Dequs")
+
+changeConsoleTitle("HEXEC by Dequs")
 
 class Colors:
     HEADER = Fore.LIGHTBLUE_EX
@@ -41,6 +44,8 @@ with open("VERSION", "r") as versionFile:
 
 update = Update(currentVersion)
 check = update.checkForUpdates()
+
+changeConsoleTitle("Menu - HEXEC")
 
 print(fr"""
       
@@ -117,16 +122,18 @@ if choice in chats:
             if line.startswith("User: ") or line.startswith("AI: "):
                 x+=1
 
-termWidth = shutil.get_terminal_size().columns
+    termWidth = shutil.get_terminal_size().columns
 
-leftText = f"{Colors.OKGREEN}Selected chat: {chats[choice] if choice in chats else 'New Chat'}{Colors.ENDC}"
-rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
+    leftText = f"{Colors.OKGREEN}Selected chat: {chats[choice] if choice in chats else 'New Chat'}{Colors.ENDC}"
+    rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
 
-spaces = termWidth - len(rightText) - len(leftText) + 19
-if spaces < 1:
-    spaces = 1
+    spaces = termWidth - len(rightText) - len(leftText) + 19
+    if spaces < 1:
+        spaces = 1
 
-print(leftText + " " * spaces + rightText)
+    print(leftText + " " * spaces + rightText)
+
+changeConsoleTitle(chats[choice] if choice in chats else "New Chat")
 
 if choice == x + 1:
     try:
@@ -150,11 +157,12 @@ aiClient = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=c
 aiClient.setPrompt("prompt.txt")
 
 while True:
-    userInput = input(f"{Colors.OKCYAN}>>>{Colors.ENDC} ")
+    internalCommands = ["exit", "config", "cls", "clear", "history", "reset", "dryrun", "menu"]
+    commandCompleter = WordCompleter(internalCommands, ignore_case=True, sentence=True)
+    session = PromptSession(completer=commandCompleter)
+    userInput = session.prompt(ANSI(f"{Colors.OKCYAN}>>>{Colors.ENDC} "))
     if not userInput.strip():
         continue
-
-    internalCommands = ["exit", "config", "cls", "clear", "history", "reset", "dryrun", "menu"]
 
     if userInput.split()[0].lower() in internalCommands:
         command = internalCommands.index(userInput.split()[0].lower())
@@ -292,7 +300,16 @@ while True:
 
     
     aiComment = aiClient.comment(comment)
-    print(f"{Colors.OKBLUE}{aiComment}{Colors.ENDC}\n")
+    parts = aiComment.split("**")
+    result = ""
+
+    for i in range(len(parts)):
+        if i % 2 == 1:
+            result += Colors.HEADERS + parts[i] + Colors.ENDC
+        else:
+            result += parts[i]
+
+    print(result)
 
             
     

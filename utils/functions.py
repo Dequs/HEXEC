@@ -66,6 +66,10 @@ def ask(commands):
         return False
     return True
 
+def changeConsoleTitle(name):
+    import ctypes
+    ctypes.windll.kernel32.SetConsoleTitleW(name)
+
 class Update:
     def __init__(self, currentVersion):
         self.currentVersion = currentVersion
@@ -130,7 +134,7 @@ class Update:
 class Installation:
     def __init__(self):
         self.stdlib = {"uuid", "contextlib", "io", "shutil"}
-        self.packages = ["google", "colorama", "uuid", "contextlib", "io", "shutil"]
+        self.packages = ["google", "colorama", "uuid", "contextlib", "io", "shutil", "prompt_toolkit"]
         self.missing = []
 
         for package in self.packages:
