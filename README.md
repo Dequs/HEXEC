@@ -1,3 +1,5 @@
+[![CI](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml/badge.svg)](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml)
+
 # HEXEC
 
 An intelligent AI-powered command control system for Windows that enables natural language interaction to execute commands, run code, and manage your system.
@@ -5,8 +7,6 @@ An intelligent AI-powered command control system for Windows that enables natura
 Created by: **Dequs**
 
 ![Menu look](https://i.imgur.com/JLGUJge.png)
-
-[![CI](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml/badge.svg)](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml)
 
 ---
 
