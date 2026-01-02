@@ -1,6 +1,7 @@
 import uuid
 import requests
 import zipfile
+import os
 
 beta = False
 
@@ -99,6 +100,7 @@ class Update:
             with open("tmp.zip","wb") as f: f.write(response.content)
             with zipfile.ZipFile("tmp.zip","r") as zip_ref:
                 zip_ref.extractall(".")
+            os.remove("tmp.zip")
             return True
         except Exception as e:
             print(f"Update failed: {e}")

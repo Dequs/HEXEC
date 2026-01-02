@@ -123,6 +123,8 @@ aiClient.setPrompt("prompt.txt")
 
 while True:
     userInput = input(f"{Colors.OKCYAN}>>>{Colors.ENDC} ")
+    if not userInput.strip():
+        continue
 
     internalCommands = ["exit", "config", "cls", "clear", "history", "reset"]
 
