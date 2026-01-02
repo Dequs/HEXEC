@@ -6,7 +6,7 @@ Created by: **Dequs**
 
 ![Menu look](https://i.imgur.com/JLGUJge.png)
 
-[![CI](https://github.com/Dequs/HEXEC/actions/workflows/ci.yml/badge.svg)](https://github.com/Dequs/HEXEC/actions/workflows/ci.yml)
+[![CI](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml/badge.svg)](https://github.com/Dequs/HEXEC/actions/workflows/python-app.yml)
 
 ---
 
