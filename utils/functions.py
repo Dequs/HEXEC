@@ -81,6 +81,11 @@ class Update:
                     self.newVersion = latestVersion
                     self.update = True
                     return True
+                else:
+                    if latestSuffix > currentSuffix:
+                        self.newVersion = latestVersion
+                        self.update = True
+                        return True
             return False
         except Exception:
             return False
