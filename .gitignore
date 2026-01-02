@@ -5,3 +5,4 @@ chats/
 config.json
 *.zip
 TODO
+.gitignore
