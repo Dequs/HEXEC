@@ -1,5 +1,4 @@
 import json
-from utils.client import AI
 
 class Config:
     def __init__(self, configPath='config.json'):

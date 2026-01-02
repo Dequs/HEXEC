@@ -1,21 +1,25 @@
 from utils.functions import Installation
-installation = Installation()
-if installation.needsInstallation():
-    print("Installing missing dependencies...")
-    installation.performInstallation()
-    print("Installation complete. Please restart the application.")
-    exit()
+from utils.config import Config
+config = Config()
+if config.loadConfig() == {}:
+    installation = Installation()
+    if installation.needsInstallation():
+        print("Installing missing dependencies...")
+        installation.performInstallation()
+        print("Installation complete. Please restart the application.")
+        exit()
 
 from utils.client import AI
-from utils.config import Config
 from colorama import Fore
 from utils.commands import CommandExecutor
 from utils.functions import uuidToText, Update
 import contextlib
 import io
 import os
+import ctypes
 
 os.system("cls")
+ctypes.windll.kernel32.SetConsoleTitleW("HEXEC - Dequs")
 
 class Colors:
     HEADER = Fore.LIGHTBLUE_EX
@@ -47,7 +51,7 @@ $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
 \__|  \__|\________|\__|  \__|\________| \______/ 
                                                   
     {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} (up to date)"}                                               
-    Created by: {Colors.OKBLUE}rudnikos3000{Colors.ENDC}
+    Created by: {Fore.YELLOW}Dequs{Colors.ENDC}
 """)
 
 if update.update:
@@ -63,7 +67,6 @@ if update.update:
     else:
         print(f"{Colors.WARNING}Update skipped. You can update later from the settings.{Colors.ENDC}")
 
-config = Config()
 if config.loadConfig() == {}:
     api_key = input("Enter your API Key: ")
     apiKeyComment = input("Enter a comment for your API Key (optional): ")
