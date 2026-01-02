@@ -4,6 +4,8 @@ An intelligent AI-powered command control system for Windows that enables natura
 
 Created by: **Dequs**
 
+![Menu look](https://i.imgur.com/JLGUJge.png)
+
 ---
 
 ## Features
