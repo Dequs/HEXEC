@@ -18,6 +18,12 @@ class CommandExecutor:
         self.safeMode = safeMode
         self.explain = explain
 
+    def setDryRun(self, dryRun: bool):
+        self.dryRun = dryRun
+
+    def getDryRun(self) -> bool:
+        return self.dryRun
+
     def execute(self, command: dict):
         if self.dryRun:
             print(f"{Colors.WARNING}[DRY RUN] Command to execute: {Colors.ENDC}{command["command"]}")

@@ -16,6 +16,7 @@ You must return exactly ONE valid JSON object and nothing else. The response wil
   - "command": string — Python code (for any action) or simple Windows CMD command.
   - "code": true if the command is Python code, false if it’s a Windows CMD command.
   - "danger": true if the command modifies files, system, or installs packages, false otherwise.
+  - "confidence": int from 0 to 100, 100 means harmless and even if there will be error nothing bad will happend, 50 its medium risk anything below will be consider harmless, 0 you need to be very cautions and even one error can destroy computer.
   - "explanation": short description of what the command does.
 
 Formatting rules for multi-line Python code:
@@ -32,7 +33,7 @@ Example correct JSON for multi-line Python code:
 
 {
   "commands": [
-    {"command":"import datetime\ncurrent_time = datetime.datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\nprint(current_time)", "code": true, "danger": false, "explanation":"Prints current date and time in YYYY-MM-DD HH:MM:SS format"}
+    {"command":"import datetime\ncurrent_time = datetime.datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\nprint(current_time)", "code": true, "danger": false, "confidence": 0, "explanation":"Prints current date and time in YYYY-MM-DD HH:MM:SS format"}
   ]
 }
 
@@ -40,7 +41,7 @@ Example correct JSON for Windows CMD command:
 
 {
   "commands": [
-    {"command":"dir", "code": false, "danger": false, "explanation":"Lists all files and folders in the current directory"}
+    {"command":"dir", "code": false, "danger": false, "confidence": 0, "explanation":"Lists all files and folders in the current directory"}
   ]
 }
 

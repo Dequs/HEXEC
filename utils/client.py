@@ -67,10 +67,10 @@ class AI:
                 file.write(f"User: {userInput}\nAI: {response.candidates[0].content.parts[0].text.strip()}\n")
         return response.candidates[0].content.parts[0].text.strip() if response.candidates else ""
     
-    def comment(self, userInput):
+    def comment(self, userInput): 
         generativeai.configure(api_key=self.api_key_comment)
         modelInstance = generativeai.GenerativeModel(self.model)
-        prompt = open("promptComments.txt", 'r').read()
+        prompt = open("promptComments.txt", 'r').read() # Sos, ciuchy i borciuchy
         response = modelInstance.generate_content(f"{prompt}\nUser input and AI response:\n{userInput}\n\nProvide a brief comment on the above interaction.")
         return response.candidates[0].content.parts[0].text.strip() if response.candidates else ""
     

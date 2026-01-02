@@ -12,11 +12,13 @@ if config.loadConfig() == {}:
 from utils.client import AI
 from colorama import Fore
 from utils.commands import CommandExecutor
-from utils.functions import uuidToText, Update
+from utils.functions import uuidToText, Update, ask
 import contextlib
 import io
 import os
 import ctypes
+import time
+import shutil
 
 os.system("cls")
 ctypes.windll.kernel32.SetConsoleTitleW("HEXEC - Dequs")
@@ -32,6 +34,8 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# Please volvo fix your game
+
 with open("VERSION", "r") as versionFile:
     currentVersion = versionFile.read().strip()
 
@@ -41,7 +45,8 @@ check = update.checkForUpdates()
 print(fr"""
       
 {Colors.HEADER}
-$$\   $$\ $$$$$$$$\ $$\   $$\ $$$$$$$$\  $$$$$$\  
+__    __  ________  __    __  ________   ______
+$$\   $$\|$$$$$$$$\|$$\   $$\ $$$$$$$$\ /$$$$$$\  
 $$ |  $$ |$$  _____|$$ |  $$ |$$  _____|$$  __$$\ 
 $$ |  $$ |$$ |      \$$\ $$  |$$ |      $$ /  \__|
 $$$$$$$$ |$$$$$\     \$$$$  / $$$$$\    $$ |      
@@ -50,7 +55,7 @@ $$ |  $$ |$$ |      $$  /\$$\ $$ |      $$ |  $$\
 $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
 \__|  \__|\________|\__|  \__|\________| \______/ 
                                                   
-    {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} (up to date)"}                                               
+    {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} {Colors.OKGREEN}(up to date){Colors.ENDC}"}                                               
     Created by: {Fore.YELLOW}Dequs{Colors.ENDC}
 """)
 
@@ -104,7 +109,24 @@ choice = int(input(f"\n{Colors.OKCYAN}>>> {Colors.ENDC}"))
 
 os.system("cls")
 
-print(f"{Colors.OKGREEN}Selected chat: {chats[choice] if choice in chats else 'New Chat'}{Colors.ENDC}")
+if choice in chats:
+    with open(f"chats/{chats[choice]}", "r") as f:
+        x = 0
+        l = f.readlines()
+        for line in l:
+            if line.startswith("User: ") or line.startswith("AI: "):
+                x+=1
+
+termWidth = shutil.get_terminal_size().columns
+
+leftText = f"{Colors.OKGREEN}Selected chat: {chats[choice] if choice in chats else 'New Chat'}{Colors.ENDC}"
+rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
+
+spaces = termWidth - len(rightText) - len(leftText) + 19
+if spaces < 1:
+    spaces = 1
+
+print(leftText + " " * spaces + rightText)
 
 if choice == x + 1:
     try:
@@ -121,6 +143,9 @@ model = config.get("model")
 askMode = config.get("alwaysAsk")
 apiKeyComment = config.get("API_KEY_COMMENT")
 
+if askMode != True:
+    print(f"{Colors.WARNING}[WARNING] askMode is disabled, please turn it on!{Colors.ENDC}\n")
+
 aiClient = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=chats[choice].split(".elham")[0] if choice in chats else None)
 aiClient.setPrompt("prompt.txt")
 
@@ -129,7 +154,7 @@ while True:
     if not userInput.strip():
         continue
 
-    internalCommands = ["exit", "config", "cls", "clear", "history", "reset"]
+    internalCommands = ["exit", "config", "cls", "clear", "history", "reset", "dryrun", "menu"]
 
     if userInput.split()[0].lower() in internalCommands:
         command = internalCommands.index(userInput.split()[0].lower())
@@ -164,6 +189,17 @@ while True:
             except FileNotFoundError:
                 print(f"{Colors.WARNING}No history to reset.{Colors.ENDC}\n")
             continue
+        elif command == 6:
+            if aiClient.getDryRun():
+                aiClient.setDryRun(False)
+                print(f"{Colors.OKGREEN}Dry run mode disabled. Commands will be executed normally.{Colors.ENDC}\n")
+            else:
+                aiClient.setDryRun(True)
+                print(f"{Colors.OKGREEN}Dry run mode enabled. Commands will not be executed.{Colors.ENDC}\n")
+            continue
+        elif command == 7:
+            os.system(f"python {os.path.abspath(__file__)}")
+            exit()
 
 
     comment = f"userInput: {userInput}"
@@ -188,17 +224,26 @@ while True:
         allSuccess = True
 
         for commands in response["commands"]:
+            if commands["confidence"] <= 20:
+                print(f"{Colors.WARNING}Very low confidence ({commands['confidence']}%) in command execution. This means the command/code may harm your computer{Colors.ENDC}\n")
+                print(f"{Colors.FAIL}Please read full command before executing:{Colors.ENDC}\n")
+                if not ask(commands):
+                    comment += f"\n\nCode execution cancelled by user for code:\n{commands['command']}"
+                    continue
+                print(f"{Colors.FAIL}Waiting 10 seconds before executing... If you want to cancel, close application, command can harm your computer...{Colors.ENDC}\n")
+                time.sleep(10)
+            if commands["confidence"] <= 50:
+                print(f"{Colors.WARNING}Low confidence ({commands['confidence']}%) in command execution.{Colors.ENDC}\n")
+                if not ask(commands):
+                    comment += f"\n\nCode execution cancelled by user for code:\n{commands['command']}"
+                    continue
             if commands["command"] == "":
                 print(f"{Colors.OKGREEN}{commands['explanation']}{Colors.ENDC}\n")
                 continue
             if commands["code"] == True:
+                print(f"{Colors.OKGREEN}Executing python code snippet...{Colors.ENDC}\n")
                 if askMode:
-                    print(f"{Colors.OKGREEN}Code to execute:{Colors.ENDC}\n{commands['command']}\n")
-                    confirm = input(
-                        f"{Colors.WARNING}About to execute code above. Proceed? (y/n): {Colors.ENDC}"
-                    ).lower()
-                    if confirm != 'y':
-                        print(f"{Colors.FAIL}Code execution cancelled by user.{Colors.ENDC}")
+                    if not ask(commands):
                         comment += f"\n\nCode execution cancelled by user for code:\n{commands['command']}"
                         continue
                 local_vars = {}
@@ -221,15 +266,11 @@ while True:
                         break
                 continue
             if askMode:
-                confirm = input(
-                    f"{Colors.WARNING}About to execute command:{Colors.ENDC} {commands['command']}\nProceed? (y/n): "
-                ).lower()
-                if confirm != 'y':
-                    print(f"{Colors.FAIL}Command execution cancelled by user.{Colors.ENDC}")
-                    comment += f"\n\nCommand execution cancelled by user for command: {commands['command']}"
+                if not ask(commands):
+                    comment += f"\n\nCode execution cancelled by user for code:\n{commands['command']}"
                     continue
-
-            #print(f"{Colors.OKGREEN}Executing command:{Colors.ENDC} {commands['command']}")
+            
+            print(f"{Colors.OKGREEN}Executing command:{Colors.ENDC} {commands['command']}")
             executor = CommandExecutor(dryRun=False, safeMode=False, explain=True)
             result, success = executor.execute(commands)
 

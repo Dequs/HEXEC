@@ -2,6 +2,7 @@ import uuid
 import requests
 import zipfile
 import os
+from utils.commands import Colors
 
 beta = False
 
@@ -48,6 +49,16 @@ def ParseVersion(v):
     nums = list(map(int, main.split(".")))
     suffix = suffix[0] if suffix else ""
     return nums, suffix
+
+def ask(commands):
+    print(f"{Colors.OKGREEN}Code to execute:{Colors.ENDC}\n{commands['command']}\n")
+    confirm = input(
+        f"{Colors.WARNING}About to execute code above. Proceed? (y/n): {Colors.ENDC}"
+    ).lower()
+    if confirm != 'y':
+        print(f"{Colors.FAIL}Code execution cancelled by user.{Colors.ENDC}")
+        return False
+    return True
 
 class Update:
     def __init__(self, currentVersion):
@@ -113,7 +124,7 @@ class Update:
 
 class Installation:
     def __init__(self):
-        self.list = ["google", "colorama", "uuid", "zipfile", "contextlib", "io"]
+        self.list = ["google", "colorama", "uuid", "zipfile", "contextlib", "io", "shutil"]
         for package in self.list:
             try:
                 __import__(package)
