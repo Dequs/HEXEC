@@ -1,5 +1,6 @@
 import uuid
 import requests
+import zipfile
 
 beta = False
 
@@ -39,43 +40,69 @@ def uuidToText(u):
         return num.to_bytes(length, "big").decode("utf-8")
     except Exception:
         return u
-
-# class Update:
-#     def __init__(self, currentVersion):
-#         self.currentVersion = currentVersion
-#         self.newVersion = None
-#         self.changelog = None
-
-#     def display(self):
-#         return f"Update available: {self.currentVersion} -> {self.newVersion}"
     
-#     def displayChangelog(self):
-#         return f"Changelog:\n{self.changelog}"
+def ParseVersion(v):
+    v = v.lstrip("v")
+    main, *suffix = v.split("-")
+    nums = list(map(int, main.split(".")))
+    suffix = suffix[0] if suffix else ""
+    return nums, suffix
+
+class Update:
+    def __init__(self, currentVersion):
+        self.currentVersion = currentVersion
+        self.newVersion = None
+        self.changelog = None
+        self.update = False
+
+    def display(self):
+        x = ""
+        for part in self.newVersion: 
+            x += part + "." 
+        x = x.rstrip(".")
+        return f"Update available: {self.currentVersion} -> {x}" 
     
-#     def checkForUpdates(self):
-#         try:
-#             response = requests.get("https://raw.githubusercontent.com/Dequs/HEXEC/refs/heads/main/VERSION")
-#             if response.status_code == 200:
-#                 latestVersion = response.text.strip()
-#                 if latestVersion < self.currentVersion:
-#                     if not beta:
-#                         print("Your version is corrupted or invalid. Please reinstall the application.")
-#                 if latestVersion > self.currentVersion:
-#                     self.newVersion = latestVersion
-#                     return True
-#             return False
-#         except Exception:
-#             return False
+    def displayChangelog(self):
+        return f"Changelog:\n{self.changelog}"
+    
+    def checkForUpdates(self):
+        try:
+            response = requests.get("https://raw.githubusercontent.com/Dequs/HEXEC/refs/heads/main/VERSION")
+            if response.status_code == 200:
+                latestVersion = response.text.strip().split(".")
+                currentVersion = self.currentVersion.split(".")
+                latestNums, latestSuffix = ParseVersion(response.text.strip())
+                currentNums, currentSuffix = ParseVersion(self.currentVersion)
+                if latestNums < currentNums:
+                    if not beta:
+                        print("Your version is corrupted or invalid. Please reinstall the application.")
+                if latestNums > currentNums:
+                    self.newVersion = latestVersion
+                    self.update = True
+                    return True
+            return False
+        except Exception:
+            return False
         
-#     def applyUpdate(self):
-#         if self.newVersion is None:
-#             return False
+    def applyUpdate(self):
+        if self.newVersion is None:
+            return False
         
-#         try:
-#             response = requests.get("https://raw.githubusercontent.com/Dequs/HEXEC/refs/heads/main/")
-#             if response.status_code == 200:
-#                 self.changelog = response.text.strip()
-#             return True
+        try:
+            x = ""
+            for part in self.newVersion: 
+                x += part + "." 
+            x = x.rstrip(".")
+            response = requests.get(f"https://github.com/Dequs/HEXEC/releases/download/{x}/HEXEC-{x}.zip")
+            print(f"https://github.com/Dequs/HEXEC/releases/download/{x}/HEXEC-{x}.zip")
+            print(response.headers['content-type'])
+            with open("tmp.zip","wb") as f: f.write(response.content)
+            with zipfile.ZipFile("tmp.zip","r") as zip_ref:
+                zip_ref.extractall(".")
+            return True
+        except Exception as e:
+            print(f"Update failed: {e}")
+            return False
 
 
     

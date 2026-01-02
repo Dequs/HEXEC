@@ -2,7 +2,7 @@ from utils.client import AI
 from utils.config import Config
 from colorama import Fore
 from utils.commands import CommandExecutor
-from utils.functions import uuidToText
+from utils.functions import uuidToText, Update
 import contextlib
 import io
 import os
@@ -20,6 +20,12 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+with open("VERSION", "r") as versionFile:
+    currentVersion = versionFile.read().strip()
+
+update = Update(currentVersion)
+check = update.checkForUpdates()
+
 print(fr"""
       
 {Colors.HEADER}
@@ -32,11 +38,22 @@ $$ |  $$ |$$ |      $$  /\$$\ $$ |      $$ |  $$\
 $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
 \__|  \__|\________|\__|  \__|\________| \______/ 
                                                   
-                                                  
+    {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} (up to date)"}                                               
     Created by: {Colors.OKBLUE}Mateusz Rudnik (rudnikos3000){Colors.ENDC}
 """)
 
-
+if update.update:
+    print(f"\n{Colors.OKGREEN}A new update is available!{Colors.ENDC}\n")
+    choice = input(f"\n{Colors.WARNING}Do you want to apply the update now? (y/n): {Colors.ENDC}").lower()
+    if choice == 'y':
+        print(f"\n{Colors.OKGREEN}Applying update...{Colors.ENDC}\n")
+        if update.applyUpdate():
+            print(f"{Colors.OKGREEN}Update applied successfully! Please restart the application.{Colors.ENDC}")
+            exit()
+        else:
+            print(f"{Colors.FAIL}Failed to apply the update. Please try again later.{Colors.ENDC}")
+    else:
+        print(f"{Colors.WARNING}Update skipped. You can update later from the settings.{Colors.ENDC}")
 
 config = Config()
 if config.loadConfig() == {}:
@@ -72,7 +89,7 @@ else:
     print(f"  {Colors.FAIL}[{x+1}]{Colors.ENDC} {Colors.FAIL}Delete all chat histories{Colors.ENDC}")
 
 print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
-choice = int(input(f"\n{Colors.OKCYAN}>>> {Colors.ENDC}Enter your choice: "))
+choice = int(input(f"\n{Colors.OKCYAN}>>> {Colors.ENDC}"))
 
 os.system("cls")
 
