@@ -3,6 +3,9 @@ import requests
 import zipfile
 import os
 from utils.commands import Colors
+import sys
+import subprocess
+import importlib
 
 beta = False
 
@@ -122,27 +125,34 @@ class Update:
             print(f"Update failed: {e}")
             return False
 
+
 class Installation:
     def __init__(self):
-        self.list = ["google", "colorama", "uuid", "zipfile", "contextlib", "io", "shutil"]
-        for package in self.list:
+        self.stdlib = {"uuid", "contextlib", "io", "shutil"}
+        self.packages = ["google", "colorama", "uuid", "contextlib", "io", "shutil"]
+        self.missing = []
+
+        for package in self.packages:
             try:
-                __import__(package)
-                self.list.remove(package)
-            except ImportError:
-                pass
+                importlib.import_module(package)
+                print("Success", package)
+            except Exception:
+                if package not in self.stdlib:
+                    self.missing.append(package)
 
     def needsInstallation(self):
-        return len(self.list) > 0
-    
+        return len(self.missing) > 0
+
     def performInstallation(self):
-        import subprocess
         try:
-            for package in self.list:
-                subprocess.check_call(["pip", "install", package])
+            for package in self.missing:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", package],
+                    check=True
+                )
             return True
         except Exception as e:
-            print(f"Installation failed: {e}")
+            print("Installation failed", e)
             return False
 
     
