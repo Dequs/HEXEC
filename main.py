@@ -198,12 +198,13 @@ while True:
                         continue
                 local_vars = {}
                 try:
-                        code_to_exec = commands['command'].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
-                        stdout_capture = io.StringIO()
-                        stderr_capture = io.StringIO()
-                        with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
-                            exec(code_to_exec, globals(), local_vars)
-                        stdout_output = stdout_capture.getvalue()
+                        codeToExec = commands['command']
+                        stdoutCapture = io.StringIO()
+                        stderrCapture = io.StringIO()
+                        compiledCode = compile(codeToExec, '<string>', 'exec')
+                        with contextlib.redirect_stdout(stdoutCapture), contextlib.redirect_stderr(stderrCapture):
+                            exec(compiledCode, globals(), local_vars)
+                        stdout_output = stdoutCapture.getvalue()
                         result = local_vars.get('result', stdout_output if stdout_output else 'No result variable set.')
                         #print(f"{Colors.OKGREEN}Code executed successfully. Result:{Colors.ENDC}\n{result}\n")
                         comment += f"\n\nCode executed successfully. Result:\n{result}"
