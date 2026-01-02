@@ -7,7 +7,6 @@ Created by: **Dequs**
 ![Menu look](https://i.imgur.com/JLGUJge.png)
 
 [![CI](https://github.com/Dequs/HEXEC/actions/workflows/ci.yml/badge.svg)](https://github.com/Dequs/HEXEC/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/hexec.svg)](https://pypi.org/project/hexec)
 
 ---
 
