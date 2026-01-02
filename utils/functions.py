@@ -113,31 +113,13 @@ class Update:
 
 class Installation:
     def __init__(self):
-        self.list = []
-        try:
-            import google
-        except ImportError:
-            self.list.append("google")
-        try:
-            import colorama
-        except ImportError:
-            self.list.append("colorama")
-        try:
-            import uuid
-        except ImportError:
-            self.list.append("uuid")
-        try:
-            import zipfile
-        except ImportError:
-            self.list.append("zipfile")
-        try:
-            import contextlib
-        except ImportError:
-            self.list.append("contextlib")
-        try:
-            import io
-        except ImportError:
-            self.list.append("io")
+        self.list = ["google", "colorama", "uuid", "zipfile", "contextlib", "io"]
+        for package in self.list:
+            try:
+                __import__(package)
+                self.list.remove(package)
+            except ImportError:
+                pass
 
     def needsInstallation(self):
         return len(self.list) > 0
