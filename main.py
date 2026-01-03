@@ -89,7 +89,8 @@ if config.loadConfig() == {}:
             "model": model,
             "alwaysAsk": True if ask == 'y' else False
         }
-    Config.createConfig(settings)
+    config = Config()
+    config.createConfig(settings)
 
 x = 1
 
