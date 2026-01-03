@@ -21,6 +21,7 @@ import shutil
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
+import json
 
 os.system("cls")
 
@@ -98,10 +99,20 @@ print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
 print(f"{Colors.OKGREEN}Available Chats:{Colors.ENDC}\n")
 
 for file in os.listdir("chats"):
-    print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{file.split(".elham")[0]}{Colors.ENDC}")
-    print(f"      {Colors.OKCYAN}Created: {uuidToText(file.split(".elham")[0])}{Colors.ENDC}")
-    chats[x] = file
-    x += 1
+    if file.endswith(".elham"):
+        with open(f"chats/{file.split('.elham')[0]}.json", 'r') as indexFile:
+            settings = json.loads(indexFile.read())
+            if settings.get("custom_name"):
+                print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{settings['custom_name']}{Colors.ENDC}")
+                print(f"      {Colors.OKCYAN}Created: {settings['created_at']}{Colors.ENDC}")
+                chats[x] = file
+                x += 1
+                continue
+            else:
+                print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{file.split('.elham')[0]}{Colors.ENDC}")
+                print(f"      {Colors.OKCYAN}Created: {uuidToText(file.split('.elham')[0])}{Colors.ENDC}")
+        chats[x] = file
+        x += 1
 
 print(f"\n  {Colors.OKGREEN}[{x}]{Colors.ENDC} {Colors.OKGREEN}Start new chat{Colors.ENDC}")
 if x+1 <= 2:
@@ -110,12 +121,57 @@ else:
     print(f"  {Colors.FAIL}[{x+1}]{Colors.ENDC} {Colors.FAIL}Delete all chat histories{Colors.ENDC}")
 
 print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
-choice = int(input(f"\n{Colors.OKCYAN}>>> {Colors.ENDC}"))
+autoCompletionChat = []
+for i in range(1, x+2):
+    autoCompletionChat.append(f"{str(i)} rename")
+    autoCompletionChat.append(f"{str(i)} delete")
+    autoCompletionChat.append(f"{str(i)} info")
+    autoCompletionChat.append(f"{str(i)} model")
+chatCompleter = WordCompleter(autoCompletionChat, ignore_case=True, sentence=True)
+session = PromptSession(completer=chatCompleter)
+choice = session.prompt(ANSI(f"{Colors.OKCYAN}>>>: {Colors.ENDC} "))
+
+try:
+    choice = choice.split(" ")
+    value = choice[1]
+    choice = int(choice[0])
+    if choice in chats:
+        if value.lower() == "rename":
+            newName = input(f"{Colors.OKCYAN}Enter new name for chat '{chats[choice]}': {Colors.ENDC}")
+            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
+                settings = json.loads(indexFile.read())
+            settings["custom_name"] = newName
+            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'w') as indexFile:
+                indexFile.write(json.dumps(settings) + "\n")
+            print(f"{Colors.OKGREEN}Chat renamed successfully to '{newName}'.{Colors.ENDC}\n")
+            os.system("cls")
+            choice = choice[0]
+        elif value.lower() == "delete":
+            os.remove(f"chats/{chats[choice]}")
+            os.remove(f"chats/{chats[choice].split('.elham')[0]}.json")
+            print(f"{Colors.OKGREEN}Chat '{chats[choice]}' deleted successfully.{Colors.ENDC}\n")
+            os.system("cls")
+            choice = choice[0]
+        elif value.lower() == "info":
+            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
+                settings = json.loads(indexFile.read())
+            print(f"{Colors.OKGREEN}Chat Information for '{chats[choice]}':{Colors.ENDC}\n")
+            print(f"  {Colors.OKBLUE}Custom Name: {settings.get('custom_name', 'N/A')}{Colors.ENDC}")
+            print(f"  {Colors.OKBLUE}Model: {settings.get('model', 'N/A')}{Colors.ENDC}")
+            print(f"  {Colors.OKBLUE}Created At: {settings.get('created_at', 'N/A')}{Colors.ENDC}")
+            print(f"  {Colors.OKBLUE}Custom Prompt: {settings.get('custom_prompt', 'N/A')}{Colors.ENDC}\n")
+            input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
+            os.system("cls")
+            choice = choice[0]
+        elif value.lower() == "model":
+            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
+                settings = json.loads(indexFile.read())
+except:
+    pass
 
 os.system("cls")
-
-if choice in chats:
-    with open(f"chats/{chats[choice]}", "r") as f:
+if int(choice[0]) in chats:
+    with open(f"chats/{chats[int(choice[0])]}", "r") as f:
         x = 0
         l = f.readlines()
         for line in l:
@@ -124,7 +180,7 @@ if choice in chats:
 
     termWidth = shutil.get_terminal_size().columns
 
-    leftText = f"{Colors.OKGREEN}Selected chat: {chats[choice] if choice in chats else 'New Chat'}{Colors.ENDC}"
+    leftText = f"{Colors.OKGREEN}Selected chat: {chats[int(choice[0])] if int(choice[0]) in chats else 'New Chat'}{Colors.ENDC}"
     rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
 
     spaces = termWidth - len(rightText) - len(leftText) + 19
@@ -133,8 +189,7 @@ if choice in chats:
 
     print(leftText + " " * spaces + rightText)
 
-changeConsoleTitle(chats[choice] if choice in chats else "New Chat")
-
+changeConsoleTitle(chats[int(choice[0])] if int(choice[0]) in chats else "New Chat")
 if choice == x + 1:
     try:
         for file in os.listdir("chats"):
@@ -153,7 +208,7 @@ apiKeyComment = config.get("API_KEY_COMMENT")
 if askMode != True:
     print(f"{Colors.WARNING}[WARNING] askMode is disabled, please turn it on!{Colors.ENDC}\n")
 
-aiClient = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=chats[choice].split(".elham")[0] if choice in chats else None)
+aiClient = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=chats[int(choice[0])].split(".elham")[0] if int(choice[0]) in chats else None)
 aiClient.setPrompt("prompt.txt")
 
 while True:

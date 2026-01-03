@@ -56,14 +56,28 @@ class AI:
             try:
                 with open(f"{self.historyDir}/{self.chat}.elham", 'r') as file:
                     history = file.read()
+                with open(f"{self.historyDir}/{self.chat}.json", 'r') as indexFile:
+                    settings = json.loads(indexFile.read())
             except FileNotFoundError:
                 #print("History file not found, starting new history.")
                 history = ""
                 with open(f"{self.historyDir}/{self.chat}.elham", 'w') as file:
                     file.write("")
+                with open(f"{self.historyDir}/{self.chat}.json", 'a') as indexFile:
+                    settings = {
+                        "custom_name": None,
+                        "model": self.model,
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "custom_prompt": None
+                    }
+                    indexFile.write(json.dumps(settings) + "\n")
         generativeai.configure(api_key=self.api_key)
+        self.model = settings.get("model", self.model)
         modelInstance = generativeai.GenerativeModel(self.model)
-        prompt = f"{history}\nUser input: {userInput}\n\n{self.prompt}"
+        if settings["custom_prompt"] is not None:
+            prompt = f"{history}\nUser input: {userInput}\n\n{settings['custom_prompt']}"
+        else:
+            prompt = f"{history}\nUser input: {userInput}\n\n{self.prompt}"
         response = modelInstance.generate_content(prompt)
         if self.historyDir is not None:
             with open(f"{self.historyDir}/{self.chat}.elham", 'a') as file:
