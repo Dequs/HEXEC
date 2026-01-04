@@ -54,8 +54,7 @@ def menu():
     print(fr"""
         
     {Colors.HEADER}
-    __    __  ________  __    __  ________   ______
-    $$\   $$\|$$$$$$$$\|$$\   $$\ $$$$$$$$\ /$$$$$$\  
+    $$\   $$\ $$$$$$$$\ $$\   $$\ $$$$$$$$\  $$$$$$\  
     $$ |  $$ |$$  _____|$$ |  $$ |$$  _____|$$  __$$\ 
     $$ |  $$ |$$ |      \$$\ $$  |$$ |      $$ /  \__|
     $$$$$$$$ |$$$$$\     \$$$$  / $$$$$\    $$ |      
@@ -101,6 +100,11 @@ def menu():
 
     print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
     print(f"{Colors.OKGREEN}Available Chats:{Colors.ENDC}\n")
+
+    try:
+        os.mkdir("chats")
+    except FileExistsError:
+        pass
 
     for file in os.listdir("chats"):
         if file.endswith(".elham"):
