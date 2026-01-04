@@ -86,6 +86,10 @@ Then follow the prompts to update:
 python main.py
 ```
 
+```bash
+run start.bat
+```
+
 ### Chat Interface
 
 1. **Select a Chat Session**:
