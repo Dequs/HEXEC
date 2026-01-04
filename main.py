@@ -33,10 +33,12 @@ class Colors:
     OKCYAN = Fore.CYAN
     OKGREEN = Fore.GREEN
     WARNING = Fore.YELLOW
+    GREY = Fore.LIGHTBLACK_EX
     FAIL = Fore.RED
     ENDC = Fore.RESET
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    DIVIDER = f"{HEADER}="*30, f"{ENDC}\n"
 
 # Please volvo fix your game
 
@@ -47,159 +49,164 @@ update = Update(currentVersion)
 check = update.checkForUpdates()
 
 changeConsoleTitle("Menu - HEXEC")
+def menu():
+    global config, choice, chats
+    print(fr"""
+        
+    {Colors.HEADER}
+    __    __  ________  __    __  ________   ______
+    $$\   $$\|$$$$$$$$\|$$\   $$\ $$$$$$$$\ /$$$$$$\  
+    $$ |  $$ |$$  _____|$$ |  $$ |$$  _____|$$  __$$\ 
+    $$ |  $$ |$$ |      \$$\ $$  |$$ |      $$ /  \__|
+    $$$$$$$$ |$$$$$\     \$$$$  / $$$$$\    $$ |      
+    $$  __$$ |$$  __|    $$  $$<  $$  __|   $$ |      
+    $$ |  $$ |$$ |      $$  /\$$\ $$ |      $$ |  $$\ 
+    $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
+    \__|  \__|\________|\__|  \__|\________| \______/ 
+                                                    
+        {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} {Colors.OKGREEN}(up to date){Colors.ENDC}"}                                               
+        Created by: {Fore.YELLOW}Dequs{Colors.ENDC}
+    """)
 
-print(fr"""
-      
-{Colors.HEADER}
-__    __  ________  __    __  ________   ______
-$$\   $$\|$$$$$$$$\|$$\   $$\ $$$$$$$$\ /$$$$$$\  
-$$ |  $$ |$$  _____|$$ |  $$ |$$  _____|$$  __$$\ 
-$$ |  $$ |$$ |      \$$\ $$  |$$ |      $$ /  \__|
-$$$$$$$$ |$$$$$\     \$$$$  / $$$$$\    $$ |      
-$$  __$$ |$$  __|    $$  $$<  $$  __|   $$ |      
-$$ |  $$ |$$ |      $$  /\$$\ $$ |      $$ |  $$\ 
-$$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
-\__|  \__|\________|\__|  \__|\________| \______/ 
-                                                  
-    {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} {Colors.OKGREEN}(up to date){Colors.ENDC}"}                                               
-    Created by: {Fore.YELLOW}Dequs{Colors.ENDC}
-""")
-
-if update.update:
-    print(f"\n{Colors.OKGREEN}A new update is available!{Colors.ENDC}\n")
-    choice = input(f"\n{Colors.WARNING}Do you want to apply the update now? (y/n): {Colors.ENDC}").lower()
-    if choice == 'y':
-        print(f"\n{Colors.OKGREEN}Applying update...{Colors.ENDC}\n")
-        if update.applyUpdate():
-            print(f"{Colors.OKGREEN}Update applied successfully! Please restart the application.{Colors.ENDC}")
-            exit()
-        else:
-            print(f"{Colors.FAIL}Failed to apply the update. Please try again later.{Colors.ENDC}")
-    else:
-        print(f"{Colors.WARNING}Update skipped. You can update later from the settings.{Colors.ENDC}")
-
-if config.loadConfig() == {}:
-    api_key = input("Enter your API Key: ")
-    apiKeyComment = input("Enter a comment for your API Key (optional): ")
-    model = input("Enter the model to use (e.g., gemini-2.5-flash): ")
-    ask = input("Always ask you before executing commands (y/n):").lower()
-    settings = {
-            "API_KEY": api_key,
-            "API_KEY_COMMENT": apiKeyComment if apiKeyComment else api_key,
-            "model": model,
-            "alwaysAsk": True if ask == 'y' else False
-        }
-    config = Config()
-    config.createConfig(settings)
-
-x = 1
-
-chats = {}
-
-print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
-print(f"{Colors.OKGREEN}Available Chats:{Colors.ENDC}\n")
-
-for file in os.listdir("chats"):
-    if file.endswith(".elham"):
-        with open(f"chats/{file.split('.elham')[0]}.json", 'r') as indexFile:
-            settings = json.loads(indexFile.read())
-            if settings.get("custom_name"):
-                print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{settings['custom_name']}{Colors.ENDC}")
-                print(f"      {Colors.OKCYAN}Created: {settings['created_at']}{Colors.ENDC}")
-                chats[x] = file
-                x += 1
-                continue
+    if update.update:
+        print(f"\n{Colors.OKGREEN}A new update is available!{Colors.ENDC}\n")
+        choice = input(f"\n{Colors.WARNING}Do you want to apply the update now? (y/n): {Colors.ENDC}").lower()
+        if choice == 'y':
+            print(f"\n{Colors.OKGREEN}Applying update...{Colors.ENDC}\n")
+            if update.applyUpdate():
+                print(f"{Colors.OKGREEN}Update applied successfully! Please restart the application.{Colors.ENDC}")
+                exit()
             else:
-                print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{file.split('.elham')[0]}{Colors.ENDC}")
-                print(f"      {Colors.OKCYAN}Created: {uuidToText(file.split('.elham')[0])}{Colors.ENDC}")
-        chats[x] = file
-        x += 1
+                print(f"{Colors.FAIL}Failed to apply the update. Please try again later.{Colors.ENDC}")
+        else:
+            print(f"{Colors.WARNING}Update skipped. You can update later from the settings.{Colors.ENDC}")
 
-print(f"\n  {Colors.OKGREEN}[{x}]{Colors.ENDC} {Colors.OKGREEN}Start new chat{Colors.ENDC}")
-if x+1 <= 2:
-    pass
-else:
-    print(f"  {Colors.FAIL}[{x+1}]{Colors.ENDC} {Colors.FAIL}Delete all chat histories{Colors.ENDC}")
+    if config.loadConfig() == {}:
+        api_key = input("Enter your API Key: ")
+        apiKeyComment = input("Enter a comment for your API Key (optional): ")
+        model = input("Enter the model to use (e.g., gemini-2.5-flash): ")
+        ask = input("Always ask you before executing commands (y/n):").lower()
+        settings = {
+                "API_KEY": api_key,
+                "API_KEY_COMMENT": apiKeyComment if apiKeyComment else api_key,
+                "model": model,
+                "alwaysAsk": True if ask == 'y' else False
+            }
+        config = Config()
+        config.createConfig(settings)
 
-print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
-autoCompletionChat = []
-for i in range(1, x+2):
-    autoCompletionChat.append(f"{str(i)} rename")
-    autoCompletionChat.append(f"{str(i)} delete")
-    autoCompletionChat.append(f"{str(i)} info")
-    autoCompletionChat.append(f"{str(i)} model")
-chatCompleter = WordCompleter(autoCompletionChat, ignore_case=True, sentence=True)
-session = PromptSession(completer=chatCompleter)
-choice = session.prompt(ANSI(f"{Colors.OKCYAN}>>>: {Colors.ENDC} "))
+    x = 1
 
-try:
-    choice = choice.split(" ")
-    value = choice[1]
-    choice = int(choice[0])
-    if choice in chats:
-        if value.lower() == "rename":
-            newName = input(f"{Colors.OKCYAN}Enter new name for chat '{chats[choice]}': {Colors.ENDC}")
-            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
+    chats = {}
+
+    print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
+    print(f"{Colors.OKGREEN}Available Chats:{Colors.ENDC}\n")
+
+    for file in os.listdir("chats"):
+        if file.endswith(".elham"):
+            with open(f"chats/{file.split('.elham')[0]}.json", 'r') as indexFile:
                 settings = json.loads(indexFile.read())
-            settings["custom_name"] = newName
-            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'w') as indexFile:
-                indexFile.write(json.dumps(settings) + "\n")
-            print(f"{Colors.OKGREEN}Chat renamed successfully to '{newName}'.{Colors.ENDC}\n")
-            os.system("cls")
-            choice = choice[0]
-        elif value.lower() == "delete":
-            os.remove(f"chats/{chats[choice]}")
-            os.remove(f"chats/{chats[choice].split('.elham')[0]}.json")
-            print(f"{Colors.OKGREEN}Chat '{chats[choice]}' deleted successfully.{Colors.ENDC}\n")
-            os.system("cls")
-            choice = choice[0]
-        elif value.lower() == "info":
-            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
-                settings = json.loads(indexFile.read())
-            print(f"{Colors.OKGREEN}Chat Information for '{chats[choice]}':{Colors.ENDC}\n")
-            print(f"  {Colors.OKBLUE}Custom Name: {settings.get('custom_name', 'N/A')}{Colors.ENDC}")
-            print(f"  {Colors.OKBLUE}Model: {settings.get('model', 'N/A')}{Colors.ENDC}")
-            print(f"  {Colors.OKBLUE}Created At: {settings.get('created_at', 'N/A')}{Colors.ENDC}")
-            print(f"  {Colors.OKBLUE}Custom Prompt: {settings.get('custom_prompt', 'N/A')}{Colors.ENDC}\n")
-            input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
-            os.system("cls")
-            choice = choice[0]
-        elif value.lower() == "model":
-            with open(f"chats/{chats[choice].split('.elham')[0]}.json", 'r') as indexFile:
-                settings = json.loads(indexFile.read())
-except:
-    pass
+                if settings.get("custom_name"):
+                    print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{settings['custom_name']}{Colors.ENDC}")
+                    print(f"      {Colors.OKCYAN}Created: {settings['created_at']}{Colors.ENDC}")
+                    chats[x] = file
+                    x += 1
+                    continue
+                else:
+                    print(f"  {Colors.OKBLUE}[{x}]{Colors.ENDC} {Colors.OKBLUE}{file.split('.elham')[0]}{Colors.ENDC}")
+                    print(f"      {Colors.OKCYAN}Created: {uuidToText(file.split('.elham')[0])}{Colors.ENDC}")
+            chats[x] = file
+            x += 1
 
-os.system("cls")
-if int(choice[0]) in chats:
-    with open(f"chats/{chats[int(choice[0])]}", "r") as f:
-        x = 0
-        l = f.readlines()
-        for line in l:
-            if line.startswith("User: ") or line.startswith("AI: "):
-                x+=1
+    print(f"\n  {Colors.OKGREEN}[{x}]{Colors.ENDC} {Colors.OKGREEN}Start new chat{Colors.ENDC}")
+    if x+1 <= 2:
+        pass
+    else:
+        print(f"  {Colors.FAIL}[{x+1}]{Colors.ENDC} {Colors.FAIL}Delete all chat histories{Colors.ENDC}")
 
-    termWidth = shutil.get_terminal_size().columns
+    print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
+    autoCompletionChat = []
+    for i in range(1, x+2):
+        autoCompletionChat.append(f"{str(i)} rename")
+        autoCompletionChat.append(f"{str(i)} delete")
+        autoCompletionChat.append(f"{str(i)} info")
+        autoCompletionChat.append(f"{str(i)} model")
+    chatCompleter = WordCompleter(autoCompletionChat, ignore_case=True, sentence=True)
+    session = PromptSession(completer=chatCompleter)
+    rawChoice = session.prompt(ANSI(f"{Colors.OKCYAN}>>>: {Colors.ENDC} "))
 
-    leftText = f"{Colors.OKGREEN}Selected chat: {chats[int(choice[0])] if int(choice[0]) in chats else 'New Chat'}{Colors.ENDC}"
-    rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
+    choice = rawChoice.split()
 
-    spaces = termWidth - len(rightText) - len(leftText) + 19
-    if spaces < 1:
-        spaces = 1
-
-    print(leftText + " " * spaces + rightText)
-
-changeConsoleTitle(chats[int(choice[0])] if int(choice[0]) in chats else "New Chat")
-if choice == x + 1:
     try:
-        for file in os.listdir("chats"):
-            os.remove(f"chats/{file}")
-        print(f"{Colors.OKGREEN}All chat histories deleted successfully.{Colors.ENDC} Restarting program...\n")
-    except FileNotFoundError:
-        print(f"{Colors.WARNING}No chat histories to delete.{Colors.ENDC}\n")
-    exit()
-    
+        if len(choice) > 1:
+            idx = int(choice[0])
+            action = choice[1].lower()
+            if idx in chats:
+                if action == "rename":
+                    newName = input(f"{Colors.OKCYAN}Enter new name for chat '{chats[idx]}': {Colors.ENDC}")
+                    with open(f"chats/{chats[idx].split('.elham')[0]}.json", 'r') as indexFile:
+                        settings = json.loads(indexFile.read())
+                    settings["custom_name"] = newName
+                    with open(f"chats/{chats[idx].split('.elham')[0]}.json", 'w') as indexFile:
+                        indexFile.write(json.dumps(settings) + "\n")
+                    print(f"{Colors.OKGREEN}Chat renamed successfully to '{newName}'.{Colors.ENDC}\n")
+                    os.system("cls")
+                elif action == "delete":
+                    os.remove(f"chats/{chats[idx]}")
+                    os.remove(f"chats/{chats[idx].split('.elham')[0]}.json")
+                    print(f"{Colors.OKGREEN}Chat '{chats[idx]}' deleted successfully.{Colors.ENDC}\n")
+                    os.system("cls")
+                elif action == "info":
+                    with open(f"chats/{chats[idx].split('.elham')[0]}.json", 'r') as indexFile:
+                        settings = json.loads(indexFile.read())
+                    print(f"{Colors.OKGREEN}Chat Information for '{chats[idx]}':{Colors.ENDC}\n")
+                    print(f"  {Colors.OKBLUE}Custom Name: {settings.get('custom_name', 'N/A')}{Colors.ENDC}")
+                    print(f"  {Colors.OKBLUE}Model: {settings.get('model', 'N/A')}{Colors.ENDC}")
+                    print(f"  {Colors.OKBLUE}Created At: {settings.get('created_at', 'N/A')}{Colors.ENDC}")
+                    print(f"  {Colors.OKBLUE}Custom Prompt: {settings.get('custom_prompt', 'N/A')}{Colors.ENDC}\n")
+                    input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
+                    os.system("cls")
+                elif action == "model":
+                    with open(f"chats/{chats[idx].split('.elham')[0]}.json", 'r') as indexFile:
+                        settings = json.loads(indexFile.read())
+                time.sleep(1)
+                menu()
+    except Exception:
+        # On any parse error, fall back to treating entire input as selection tokens
+        pass
+
+    os.system("cls")
+    if int(choice[0]) in chats:
+        with open(f"chats/{chats[int(choice[0])]}", "r") as f:
+            x = 0
+            l = f.readlines()
+            for line in l:
+                if line.startswith("User: ") or line.startswith("AI: "):
+                    x+=1
+
+        termWidth = shutil.get_terminal_size().columns
+
+        leftText = f"{Colors.OKGREEN}Selected chat: {chats[int(choice[0])] if int(choice[0]) in chats else 'New Chat'}{Colors.ENDC}"
+        rightText = f"{Colors.OKCYAN}[Messages: {x}]{Colors.ENDC}"
+
+        spaces = termWidth - len(rightText) - len(leftText) + 19
+        if spaces < 1:
+            spaces = 1
+
+        print(leftText + " " * spaces + rightText)
+
+    changeConsoleTitle(chats[int(choice[0])] if int(choice[0]) in chats else "New Chat")
+    if choice == x + 1:
+        try:
+            for file in os.listdir("chats"):
+                os.remove(f"chats/{file}")
+            print(f"{Colors.OKGREEN}All chat histories deleted successfully.{Colors.ENDC} Restarting program...\n")
+        except FileNotFoundError:
+            print(f"{Colors.WARNING}No chat histories to delete.{Colors.ENDC}\n")
+        exit()
+
+menu()
+
 config = Config()
 apiKey = config.get("API_KEY")
 model = config.get("model")
@@ -212,8 +219,11 @@ if askMode != True:
 aiClient = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=chats[int(choice[0])].split(".elham")[0] if int(choice[0]) in chats else None)
 aiClient.setPrompt("prompt.txt")
 
+aiClientThink = AI(api_key=apiKey, model=model, api_key_comment=apiKeyComment, chat=chats[int(choice[0])].split(".elham")[0] if int(choice[0]) in chats else None)
+aiClientThink.setPrompt("promptThinking.txt")
+
 while True:
-    internalCommands = ["exit", "config", "cls", "clear", "history", "reset", "dryrun", "menu"]
+    internalCommands = ["exit", "config", "cls", "clear", "history", "reset", "dryrun", "menu", "clearlogs"]
     commandCompleter = WordCompleter(internalCommands, ignore_case=True, sentence=True)
     session = PromptSession(completer=commandCompleter)
     userInput = session.prompt(ANSI(f"{Colors.OKCYAN}>>>{Colors.ENDC} "))
@@ -264,12 +274,28 @@ while True:
         elif command == 7:
             os.system(f"python {os.path.abspath(__file__)}")
             exit()
+        elif command == 8:
+            try:
+                os.remove("logs.log")
+                print(f"{Colors.OKGREEN}Logs cleared successfully.{Colors.ENDC}\n")
+            except FileNotFoundError:
+                print(f"{Colors.WARNING}No logs to clear.{Colors.ENDC}\n")
+            continue
 
 
     comment = f"userInput: {userInput}"
 
     while True:
-        response = aiClient.send(userInput)
+        print(f"{Colors.GREY}AI is thinking...{Colors.ENDC}\n")
+        responseThink = ""
+        print(Colors.GREY, end='', flush=True)
+        for chunk in aiClientThink.send(userInput, stream=True):
+            print(chunk, end='', flush=True)
+            responseThink += chunk
+        print(Colors.ENDC)
+        print("\n")
+        response = aiClient.send(responseThink, stream=False)
+        print(Colors.DIVIDER, Colors.ENDC)
         try:
             response = aiClient.formatResponse(response)
         except Exception as e:
@@ -317,7 +343,7 @@ while True:
                         stderrCapture = io.StringIO()
                         compiledCode = compile(codeToExec, '<string>', 'exec')
                         with contextlib.redirect_stdout(stdoutCapture), contextlib.redirect_stderr(stderrCapture):
-                            exec(compiledCode, globals(), local_vars)
+                            exec(compiledCode, local_vars, local_vars)
                         stdout_output = stdoutCapture.getvalue()
                         result = local_vars.get('result', stdout_output if stdout_output else 'No result variable set.')
                         #print(f"{Colors.OKGREEN}Code executed successfully. Result:{Colors.ENDC}\n{result}\n")
@@ -343,6 +369,7 @@ while True:
                 comment += f"\n\nCommand executed successfully:\n{result}"
             elif success is False:
                 print(f"{Colors.FAIL}Command failed, sending error to AI...{Colors.ENDC}")
+                print(f"{Colors.FAIL}{result:.200f}{Colors.ENDC}")
                 userInput = f"Command failed: {result}"
                 allSuccess = False
                 comment += f"\n\nCommand failed:\n{result}"
@@ -361,7 +388,7 @@ while True:
 
     for i in range(len(parts)):
         if i % 2 == 1:
-            result += Colors.HEADERS + parts[i] + Colors.ENDC
+            result += Colors.HEADER + Colors.BOLD + parts[i] + Colors.ENDC
         else:
             result += parts[i]
 

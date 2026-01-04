@@ -6,6 +6,15 @@ from utils.commands import Colors
 import sys
 import subprocess
 import importlib
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    filename="logs.log",
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
 
 beta = False
 
@@ -54,16 +63,22 @@ def ParseVersion(v):
     return nums, suffix
 
 def ask(commands):
-    print(f"{Colors.OKGREEN}Code to execute:{Colors.ENDC}\n{commands['command']}\n")
-    print(f"{Colors.HEADER}={Colors.ENDC}"*30, "\n")
-    print(f"{Colors.OKBLUE}Explanation:{Colors.ENDC}\n{commands["explanation"]}\n")
-    print(f"{Colors.HEADER}={Colors.ENDC}"*30, "\n")
-    confirm = input(
-        f"{Colors.WARNING}About to execute code above. Proceed? (y/n): {Colors.ENDC}"
-    ).lower()
+    msg_code = f"{Colors.OKGREEN}Code to execute:{Colors.ENDC}\n{commands['command']}\n"
+    msg_sep = f"{Colors.HEADER}={Colors.ENDC}" * 30 + "\n"
+    msg_expl = f"{Colors.OKBLUE}Explanation:{Colors.ENDC}\n{commands.get('explanation','')}\n"
+
+    print(msg_code)
+    print(msg_sep)
+    print(msg_expl)
+
+    logger.info("About to execute user-provided code. Explanation: %s", commands.get('explanation'))
+
+    confirm = input(f"{Colors.WARNING}About to execute code above. Proceed? (y/n): {Colors.ENDC}").lower()
     if confirm != 'y':
+        logger.info("User cancelled code execution")
         print(f"{Colors.FAIL}Code execution cancelled by user.{Colors.ENDC}")
         return False
+    logger.info("User confirmed code execution")
     return True
 
 def changeConsoleTitle(name):
@@ -97,7 +112,7 @@ class Update:
                 currentNums, currentSuffix = ParseVersion(self.currentVersion)
                 if latestNums < currentNums:
                     if not beta:
-                        print("Your version is corrupted or invalid. Please reinstall the application.")
+                        logger.warning("Current version appears corrupted or invalid. Consider reinstalling.")
                 if latestNums > currentNums:
                     self.newVersion = latestVersion
                     self.update = True
@@ -127,9 +142,9 @@ class Update:
             os.remove("tmp.zip")
             return True
         except Exception as e:
-            print(f"Update failed: {e}")
+            logger.exception("Update failed: %s", e)
             return False
-
+        
 
 class Installation:
     def __init__(self):
@@ -140,7 +155,7 @@ class Installation:
         for package in self.packages:
             try:
                 importlib.import_module(package)
-                print("Success", package)
+                logger.info("Module available: %s", package)
             except Exception:
                 if package not in self.stdlib:
                     self.missing.append(package)
@@ -157,7 +172,7 @@ class Installation:
                 )
             return True
         except Exception as e:
-            print("Installation failed", e)
+            logger.exception("Installation failed: %s", e)
             return False
 
-    
+
