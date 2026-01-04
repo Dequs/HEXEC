@@ -49,7 +49,7 @@ The application automatically checks for and installs missing dependencies on fi
 ### 3. First Run
 
 ```bash
-python main.py
+start.bat
 ```
 
 On first run, you'll be prompted to enter:
