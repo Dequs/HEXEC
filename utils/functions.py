@@ -102,6 +102,15 @@ class Update:
     def displayChangelog(self):
         return f"Changelog:\n{self.changelog}"
     
+    def getVersionGithub(self):
+        try:
+            response = requests.get("https://raw.githubusercontent.com/Dequs/HEXEC/refs/heads/main/VERSION")
+            if response.status_code == 200:
+                return response.text.strip()
+            return None
+        except Exception:
+            return None
+    
     def checkForUpdates(self):
         try:
             response = requests.get("https://raw.githubusercontent.com/Dequs/HEXEC/refs/heads/main/VERSION")

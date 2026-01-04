@@ -6,8 +6,10 @@ config.json
 *.zip
 TODO
 /tests
-.vscode/settings.json
+.vscode/settings.json 
 *.md
 CONTRIBUTING.md
 LICENSE
 SECURITY.md
+logs.log
+createRelease.py
