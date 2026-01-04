@@ -128,7 +128,9 @@ HEXEC/
 ├── main.py                 # Main application entry point
 ├── config.json             # Configuration file (auto-generated)
 ├── prompt.txt              # System prompt for AI behavior
+├── logs.log                # Full detailed application logs
 ├── promptComments.txt      # Prompt for response processing
+├── promptThinking.txt      # Prompt for deep thinking
 ├── VERSION                 # Version information
 ├── README.md               # This file
 ├── utils/
