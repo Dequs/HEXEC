@@ -63,7 +63,7 @@ def menu():
     $$ |  $$ |$$$$$$$$\ $$ /  $$ |$$$$$$$$\ \$$$$$$  |
     \__|  \__|\________|\__|  \__|\________| \______/ 
                                                     
-        {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} {Colors.OKGREEN}(up to date){Colors.ENDC}"}                                               
+        {update.display() if update.checkForUpdates() else f"Current version: {currentVersion} {Colors.OKGREEN}{"(up to date)" if not update.wrong else f"{Colors.FAIL}(corrupted or invalid)"}{Colors.ENDC}"}                                               
         Created by: {Fore.YELLOW}Dequs{Colors.ENDC}
     """)
 

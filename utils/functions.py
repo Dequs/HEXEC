@@ -91,6 +91,7 @@ class Update:
         self.newVersion = None
         self.changelog = None
         self.update = False
+        self.wrong = False
 
     def display(self):
         x = ""
@@ -122,6 +123,8 @@ class Update:
                 if latestNums < currentNums:
                     if not beta:
                         logger.warning("Current version appears corrupted or invalid. Consider reinstalling.")
+                        print(f"{Colors.FAIL}Current version appears corrupted or invalid. Consider reinstalling.{Colors.ENDC}")
+                        self.wrong = True
                 if latestNums > currentNums:
                     self.newVersion = latestVersion
                     self.update = True
