@@ -336,6 +336,7 @@ while True:
         else:
             parts = aiComment.split("**")
         
+        result = ""
         for i in range(len(parts)):
             if i % 2 == 1:
                 result += Colors.HEADER + Colors.BOLD + parts[i] + Colors.ENDC
