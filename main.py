@@ -22,10 +22,26 @@ from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 import json
+import logging
 
 os.system("cls")
 
 changeConsoleTitle("HEXEC by Dequs")
+
+logging.basicConfig(
+    level=logging.INFO,
+    filename="logs.log",
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+
+logging.info("""
+             
+============================
+    New session started
+============================
+""")
 
 class Colors:
     HEADER = Fore.LIGHTBLUE_EX
