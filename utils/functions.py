@@ -1,3 +1,4 @@
+import json
 import uuid
 import requests
 import zipfile
@@ -7,6 +8,7 @@ import sys
 import subprocess
 import importlib
 import logging
+import datetime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,7 +43,6 @@ def base42ToText(encoded):
 def textToUUID(text):
     data = text.encode("utf-8")
     num = int.from_bytes(data, "big")
-    # ograniczamy do 128 bitów
     num = num & ((1 << 128) - 1)
     return uuid.UUID(int=num)
 
@@ -187,4 +188,32 @@ class Installation:
             logger.exception("Installation failed: %s", e)
             return False
 
+class EnhancedHistory:
+    def __init__(self, historyDir, chatID):
+        self.historyDir = historyDir
+        self.chatID = chatID
+        self.context = []
+        
+    def add_interaction(self, userInput, aiResponse, result=None):
+        timestamp = datetime.now().isoformat()
+        entry = {
+            "timestamp": timestamp,
+            "user": userInput,
+            "ai": aiResponse,
+            "result": result,
+            "context": self.context.copy()
+        }
 
+        with open(f"{self.historyDir}/{self.chatID}.jsonl", 'a') as f:
+            f.write(json.dumps(entry) + '\n')
+        
+        self.context.append(entry)
+        if len(self.context) > 10:
+            self.context.pop(0)
+    
+    def getContextSummary(self):
+        summary = []
+        for entry in self.context[-3:]:  
+            if entry.get("result"):
+                summary.append(f"Result: {entry['result'][:100]}...")
+        return "\n".join(summary)

@@ -21,7 +21,7 @@ class Colors:
     ENDC = Fore.RESET
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-    DIVIDER = f"{HEADER}="*30, f"{ENDC}\n"
+    DIVIDER = Fore.LIGHTBLACK_EX + "="*50 + Fore.RESET
 
 class CommandExecutor:
     def __init__(self, dryRun=False, safeMode=True, explain=True):
@@ -42,7 +42,7 @@ class CommandExecutor:
         logger.info(f"Executing command: {command['command']}")
         if self.dryRun:
             logger.info("Dry run mode enabled, not executing command.")
-            print(f"{Colors.WARNING}[DRY RUN] Command to execute: {Colors.ENDC}{command["command"]}")
+            print(f"{Colors.WARNING}[DRY RUN] Command to execute: {Colors.ENDC}" + str(command.get('command', '')))
             return "Dry run - command not executed.", None
 
         if command["danger"] and self.safeMode:
@@ -51,7 +51,7 @@ class CommandExecutor:
 
         logger.info("Executing command in shell.")
         try:
-            if command["timeout"]:
+            if command.get("timeout"):
                 print(f"{Colors.WARNING}Note: This command may take a long time to execute.{Colors.ENDC}")
             result = subprocess.run(
                 command["command"],
@@ -60,19 +60,54 @@ class CommandExecutor:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=0 if command["timeout"] is True else 30
+                timeout=None if command.get("timeout") is True else 30
             )
-            output = result.stdout
+            output = result.stdout if result.stdout else result.stderr
             logger.info("Command executed successfully.")
             if self.explain:
                 explanation = command["explanation"]
                 logger.info("Providing explanation for command execution.")
-                return f"{Colors.OKGREEN}Command executed successfully.{Colors.ENDC}\n{output}\n{Colors.OKCYAN}Explanation:\n{explanation}", True
-            return f"{Colors.OKGREEN}Command executed successfully.{Colors.ENDC}\n{output}", True
+                return f"\n{Colors.OKGREEN}Command executed successfully.{Colors.ENDC}\n{output}\n{Colors.OKCYAN}Explanation:\n{explanation}", True
+            return f"{Colors.HEADER}{output}{Colors.ENDC}", True
         except subprocess.CalledProcessError as e:
             logger.error(f"Error executing command: {e.stderr}")
             return f"{Colors.FAIL}Error executing command:{Colors.ENDC}\n{e.stderr}", False
         except subprocess.TimeoutExpired:
             logger.error("Command execution timed out.")
             return f"{Colors.FAIL}Command execution timed out.{Colors.ENDC}", False
+        
+class InteractiveExecutor:
+    def __init__(self, aiClient, streamMode=True):
+        self.aiClient = aiClient
+        self.streamMode = streamMode
+        self.command_history = []
+
+    def executeWithFeedback(self, user_input):
+        print(f"{Colors.OKCYAN}Starting interactive execution...{Colors.ENDC}")
+
+        while True:
+            response = self.aiClient.send(user_input, stream=self.streamMode)
+
+            commandData = self.aiClient.formatResponse(response)
+            if not commandData or "commands" not in commandData:
+                return "No valid command received"
+
+            for cmd in commandData["commands"]:
+                executor = CommandExecutor()
+                result, success = executor.execute(cmd)
+
+                self.command_history.append({
+                    "command": cmd.get("command", ""),
+                    "result": result,
+                    "success": success
+                })
+
+                if self.streamMode:
+                    print(f"\n{Colors.OKGREEN}Command executed{Colors.ENDC}")
+                    print(f"{Colors.GREY}Result: {str(result)[:200]}...{Colors.ENDC}")
+
+                if not success and not (cmd.get("continueOnError", False) or cmd.get("continue_on_error", False)):
+                    return f"Command failed: {result}"
+
+            user_input = "Previous command executed. Provide next command or say 'complete' if finished."
         
