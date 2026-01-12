@@ -55,7 +55,7 @@ start.bat
 On first run, you'll be prompted to enter:
 - **API Key**: Your Gemini API key
 - **API Key Comment**: An optional description/label for your API key
-- **Model**: AI model to use (e.g., `gemini-2.5-flash`)
+- **Model**: AI model to use (e.g., `gemini-2.5-flash`, only supported by generativeai from google)
 - **Always Ask Mode**: Whether to confirm before executing commands (y/n)
 
 ---
