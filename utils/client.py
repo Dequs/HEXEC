@@ -34,7 +34,7 @@ class AI:
             self.chat = chat
         else:
             logger.info("No Chat ID provided, generating new one.")
-            self.chat = textToUUID(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            self.chat = str(textToUUID(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         if historyDir is not None:
             self.historyDir = historyDir
@@ -108,12 +108,19 @@ class AI:
         else:
             return f"Error: {result[:200]}"
 
-    def _sendStream(self, userInput, response, immediateExecution=False):
+    def _sendStream(self, userInput, response, immediateExecution=False, chatConfig=None):
         fullResponse = ""
         currentResult = ""
         jsonBuffer = ""
         inJson = False
         jsonDepth = 0
+
+        if chatConfig is None:
+            try:
+                with open(f"{self.historyDir}/{self.chat}.json", 'r') as f:
+                    chatConfig = json.load(f)
+            except:
+                chatConfig = {}
         
         for chunk in response:
             if chunk.candidates and chunk.candidates[0].content.parts:
@@ -155,10 +162,15 @@ class AI:
                     time.sleep(0.002)
                     yield ch + (currentResult if (i == len(textChunk)-1 and currentResult) else '')
                     i += 1
-        
+                    
+        if chatConfig:
+            self._saveStructuredHistory(chatConfig, userInput, fullResponse.strip(), currentResult)
+
         if self.historyDir is not None:
             with open(f"{self.historyDir}/{self.chat}.elham", 'a') as file:
                 file.write(f"User: {userInput}\nAI: {fullResponse.strip()}\nResult: {currentResult}\n")
+
+        return fullResponse
 
     class EnhancedHistory:
         def __init__(self, history_dir, chat_id):
@@ -187,56 +199,64 @@ class AI:
             return "\n".join(summary)
 
     def send(self, userInput, stream=False, immediateExecution=False):
-        if self.historyDir is not None:
-            logger.info("Loading chat history...")
-            try:
-                with open(f"{self.historyDir}/{self.chat}.elham", 'r') as file:
-                    history = file.read()
-                with open(f"{self.historyDir}/{self.chat}.json", 'r') as indexFile:
-                    settings = json.loads(indexFile.read())
-                logger.info("Chat history loaded successfully.")
-            except FileNotFoundError:
-                logger.warning("History file not found, starting new history.")
-                history = ""
-                with open(f"{self.historyDir}/{self.chat}.elham", 'w') as file:
-                    file.write("")
-                with open(f"{self.historyDir}/{self.chat}.json", 'a') as indexFile:
-                    settings = {
-                        "custom_name": None,
-                        "model": self.model,
-                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "custom_prompt": None
-                    }
-                    indexFile.write(json.dumps(settings) + "\n")
+        chatConfigPath = f"{self.historyDir}/{self.chat}.json"
+        
+        try:
+            with open(chatConfigPath, 'r') as f:
+                chatConfig = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            chatConfig = {
+                "chat_id": self.chat,
+                "custom_name": None,
+                "model": self.model,
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "custom_prompt": None,
+                "message_history": [],
+                "stats": {
+                    "total_messages": 0,
+                    "user_messages": 0,
+                    "ai_messages": 0,
+                    "last_updated": datetime.now().isoformat()
+                }
+            }
+            with open(chatConfigPath, 'w') as f:
+                json.dump(chatConfig, f, indent=2)
+        
+        # Load message history
+        messageHistory = chatConfig.get("message_history", [])
+        
+        history_text = ""
+        for msg in messageHistory:
+            if msg.get("role") == "user":
+                history_text += f"User: {msg.get('content', '')}\n"
+            elif msg.get("role") == "assistant":
+                history_text += f"AI: {msg.get('content', '')}\n"
         
         logger.info("Sending user input to AI model.")
         generativeai.configure(api_key=self.apiKey)
-        self.model = settings.get("model", self.model)
         modelInstance = generativeai.GenerativeModel(self.model)
         logger.info(f"Using model: {self.model}")
         
-        if settings["custom_prompt"] is not None:
+        if chatConfig.get("custom_prompt"):
             logger.info("Using custom prompt from settings.")
-            prompt = f"{history}\nUser input: {userInput}\n\n{settings['custom_prompt']}"
+            prompt = f"{history_text}\nUser input: {userInput}\n\n{chatConfig['custom_prompt']}"
         else:
             logger.info("Using default prompt.")
-            prompt = f"{history}\nUser input: {userInput}\n\n{self.prompt}"
+            prompt = f"{history_text}\nUser input: {userInput}\n\n{self.prompt}"
         
         logger.info("Generating content from AI model.")
         response = modelInstance.generate_content(prompt, stream=stream)
         logger.info("Content generated successfully.")
         
         if stream:
-            logger.info("Streaming response enabled.")
-            return self._sendStream(userInput, response, immediateExecution)
+            logger.info("Streaming response enabled.")  
+            return self._sendStream(userInput, response, immediateExecution, chatConfig)
         else:
             fullResponse = response.candidates[0].content.parts[0].text.strip() if response.candidates else ""
             
-            if self.historyDir is not None:
-                logger.info("Appending interaction to chat history.")
-                with open(f"{self.historyDir}/{self.chat}.elham", 'a') as file:
-                    file.write(f"User: {userInput}\nAI: {fullResponse.strip()}\n")
-            logger.info("Interaction appended to history successfully.")
+            self._saveStructuredHistory(chatConfig, userInput, fullResponse)
+            
+            logger.info("Interaction saved to structured history.")
             return fullResponse
     
     def comment(self, userInput): 
@@ -343,6 +363,190 @@ class AI:
                 break
             
             currentInput = f"Previous step result: {responseText[:500]}\nNext instruction: {nextAction}"
+    
+    def _loadChatHistory(self):
+        try:
+            with open(f"{self.historyDir}/{self.chat}.json", 'r') as indexFile:
+                chatConfig = json.load(indexFile)
+            
+            if chatConfig.get("message_history"):
+                return chatConfig["message_history"]
+            else:
+                return self._loadLegacyHistory()
+        except FileNotFoundError:
+            return []
+    
+    def _loadLegacyHistory(self):
+        try:
+            with open(f"{self.historyDir}/{self.chat}.elham", 'r') as file:
+                lines = file.readlines()
+            
+            messages = []
+            currentMessage = {}
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith("User: "):
+                    if currentMessage:
+                        messages.append(currentMessage)
+                    currentMessage = {
+                        "role": "user",
+                        "content": line[6:],
+                        "timestamp": datetime.now().isoformat() 
+                    }
+                elif line.startswith("AI: "):
+                    if currentMessage and currentMessage.get("role") == "user":
+                        messages.append({
+                            "role": "assistant",
+                            "content": line[4:],
+                            "timestamp": datetime.now().isoformat(),
+                            "response_to": len(messages)  
+                        })
+                    else:
+                        messages.append({
+                            "role": "assistant",
+                            "content": line[4:],
+                            "timestamp": datetime.now().isoformat()
+                        })
+            
+            if currentMessage:
+                messages.append(currentMessage)
+            
+            return messages
+        except FileNotFoundError:
+            return []
+    
+    def _saveChatHistory(self, messages):
+        try:
+            with open(f"{self.historyDir}/{self.chat}.json", 'r') as indexFile:
+                chatConfig = json.load(indexFile)
+        except FileNotFoundError:
+            chatConfig = {
+                "chat_id": self.chat,
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "model": self.model,
+                "message_history": [],
+                "stats": {
+                    "total_messages": 0,
+                    "user_messages": 0,
+                    "ai_messages": 0,
+                    "last_updated": datetime.now().isoformat()
+                }
+            }
+        
+        chatConfig["message_history"] = messages
+        
+        chatConfig["stats"] = {
+            "total_messages": len(messages),
+            "user_messages": len([m for m in messages if m.get("role") == "user"]),
+            "ai_messages": len([m for m in messages if m.get("role") == "assistant"]),
+            "last_updated": datetime.now().isoformat()
+        }
+        
+        with open(f"{self.historyDir}/{self.chat}.json", 'w') as indexFile:
+            json.dump(chatConfig, indexFile, indent=2)
+        
+        self._saveToElham(messages)
+    
+    def _saveToElham(self, messages):
+        with open(f"{self.historyDir}/{self.chat}.elham", 'w') as file:
+            for msg in messages:
+                if msg.get("role") == "user":
+                    file.write(f"User: {msg.get('content', '')}\n")
+                elif msg.get("role") == "assistant":
+                    file.write(f"AI: {msg.get('content', '')}\n")
+
+    def _saveStructuredHistory(self, chatConfig, userInput, aiResponse, result=None):
+        try:
+            user_message = {
+                "role": "user",
+                "content": userInput,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            ai_message = {
+                "role": "assistant",
+                "content": aiResponse,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            if result:
+                ai_message["result"] = result
+            
+            message_history = chatConfig.get("message_history", [])
+            message_history.append(user_message)
+            message_history.append(ai_message)
+            chatConfig["message_history"] = message_history
+            
+            stats = chatConfig.get("stats", {
+                "total_messages": 0,
+                "user_messages": 0,
+                "ai_messages": 0
+            })
+            stats["total_messages"] += 2
+            stats["user_messages"] += 1
+            stats["ai_messages"] += 1
+            stats["last_updated"] = datetime.now().isoformat()
+            chatConfig["stats"] = stats
+            with open(f"{self.historyDir}/{self.chat}.json", 'w') as f:
+                json.dump(chatConfig, f, indent=2)
+            
+            with open(f"{self.historyDir}/{self.chat}.elham", 'a') as f:
+                f.write(f"User: {userInput}\n")
+                f.write(f"AI: {aiResponse}\n")
+                if result:
+                    f.write(f"Result: {result}\n")
+            
+            logger.info("Structured history saved successfully.")
+            
+        except Exception as e:
+            logger.error(f"Error saving structured history: {e}")
+    
+    def getChatStatistics(self):
+        try:
+            with open(f"{self.historyDir}/{self.chat}.json", 'r') as indexFile:
+                chat_config = json.load(indexFile)
+                return chat_config.get("stats", {})
+        except FileNotFoundError:
+            return {}
+    
+    def searchChatHistory(self, keyword):
+        messages = self._loadChatHistory()
+        results = []
+        
+        for idx, msg in enumerate(messages):
+            if keyword.lower() in msg.get("content", "").lower():
+                results.append({
+                    "index": idx,
+                    "role": msg.get("role"),
+                    "content": msg.get("content", "")[:100] + "...",
+                    "timestamp": msg.get("timestamp", "Unknown")
+                })
+        
+        return results
+    
+    def exportChatHistory(self, format="json"):
+        messages = self._loadChatHistory()
+        
+        if format == "json":
+            return {
+                "chat_id": self.chat,
+                "total_messages": len(messages),
+                "messages": messages
+            }
+        elif format == "txt":
+            textOutput = f"Chat ID: {self.chat}\n"
+            textOutput += f"Total Messages: {len(messages)}\n"
+            textOutput += "=" * 50 + "\n\n"
+            
+            for msg in messages:
+                role = "User" if msg.get("role") == "user" else "AI"
+                textOutput += f"{role}: {msg.get('content', '')}\n"
+                if msg.get("timestamp"):
+                    textOutput += f"Time: {msg.get('timestamp')}\n"
+                textOutput += "-" * 30 + "\n"
+            
+            return textOutput
 
 class InteractiveExecutor:
     def __init__(self, aiClient, streamMode=True):

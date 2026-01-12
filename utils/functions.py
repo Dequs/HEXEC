@@ -187,6 +187,34 @@ class Installation:
         except Exception as e:
             logger.exception("Installation failed: %s", e)
             return False
+        
+    def checkInstallation(self):
+        filesDir = ["main.py", "utils/client.py", "utils/commands.py", "utils/config.py", "utils/functions.py"]
+
+        filesNotFound = []
+
+        for file in filesDir:
+            try:
+                if not os.path.isfile(file):
+                    logger.warning("Missing file detected: %s", file)
+                    print(f"Missing file detected: {Colors.FAIL}{file}{Colors.ENDC}")
+                    filesNotFound.append(file)
+            except Exception as e:
+                logger.exception("Error checking file %s: %s", file, e)
+        return filesNotFound
+    
+    def fixInstallation(self, filesNotFound):
+        with open("VERSION", "r") as f:
+            currentVersion = f.read().strip()
+        try:
+            for file in filesNotFound:
+                response = requests.get(f"https://raw.githubusercontent.com/Dequs/HEXEC/refs/tags/{currentVersion}/{file}")
+                with open(file, "wb") as f:
+                    f.write(response.content)
+            return True
+        except Exception as e:
+            logger.exception("Fix installation failed: %s", e)
+            return False
 
 class EnhancedHistory:
     def __init__(self, historyDir, chatID):

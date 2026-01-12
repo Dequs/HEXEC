@@ -1,8 +1,15 @@
 from utils.functions import Installation
 from utils.config import Config
+from utils.functions import Colors
+installation = Installation()
+filesNotFound = installation.checkInstallation()
+if filesNotFound:
+    print("Trying to fix installation...")
+    if installation.fixInstallation(filesNotFound):
+        print(f"{Colors.OKGREEN}Installation fixed successfully. Please restart the application.{Colors.ENDC}")
+        exit()
 config = Config()
 if config.loadConfig() == {}:
-    installation = Installation()
     if installation.needsInstallation():
         print("Installing missing dependencies...")
         installation.performInstallation()
@@ -43,20 +50,136 @@ logging.info("""
 ============================
 """)
 
-class Colors:
-    HEADER = Fore.LIGHTBLUE_EX
-    OKBLUE = Fore.BLUE
-    OKCYAN = Fore.CYAN
-    OKGREEN = Fore.GREEN
-    WARNING = Fore.YELLOW
-    GREY = Fore.LIGHTBLACK_EX
-    FAIL = Fore.RED
-    ENDC = Fore.RESET
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    DIVIDER = Fore.LIGHTBLACK_EX + "="*50 + Fore.RESET
+def displayChatInfo(chatFile):
+    chatID = chatFile.split('.elham')[0]
+    
+    try:
+        with open(f"chats/{chatID}.json", 'r') as f:
+            chatConfig = json.load(f)
+        
+        print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
+        print(f"{Colors.OKGREEN}Chat Information:{Colors.ENDC}\n")
+        
+        print(f"{Colors.OKBLUE}Chat ID:{Colors.ENDC} {chatID}")
+        print(f"{Colors.OKBLUE}Custom Name:{Colors.ENDC} {chatConfig.get('custom_name', 'N/A')}")
+        print(f"{Colors.OKBLUE}Model:{Colors.ENDC} {chatConfig.get('model', 'N/A')}")
+        print(f"{Colors.OKBLUE}Created At:{Colors.ENDC} {chatConfig.get('created_at', 'N/A')}")
+        print(f"{Colors.OKBLUE}Custom Prompt:{Colors.ENDC} {chatConfig.get('custom_prompt', 'N/A')}")
+        
+        if 'stats' in chatConfig:
+            stats = chatConfig['stats']
+            print(f"\n{Colors.OKCYAN}Statistics:{Colors.ENDC}")
+            print(f"  Total Messages: {stats.get('total_messages', 0)}")
+            print(f"  User Messages: {stats.get('user_messages', 0)}")
+            print(f"  AI Messages: {stats.get('ai_messages', 0)}")
+            print(f"  Last Updated: {stats.get('last_updated', 'N/A')}")
+        
+        if 'message_history' in chatConfig:
+            messages = chatConfig['message_history'][-5:]  
+            if messages:
+                print(f"\n{Colors.OKCYAN}Recent Messages:{Colors.ENDC}")
+                for msg in messages:
+                    role = "User" if msg.get("role") == "user" else "AI"
+                    timestamp = msg.get("timestamp", "").split("T")[0] 
+                    print(f"  [{role}] {timestamp}: {msg.get('content', '')[:50]}...")
+        
+        print(f"\n{Colors.HEADER}{'='*50}{Colors.ENDC}")
+        
+    except (FileNotFoundError, json.JSONDecodeError):
+        print(f"{Colors.FAIL}Could not load chat information.{Colors.ENDC}")
 
-# Please volvo fix your game
+def chatSearch():
+    print(f"\n{Colors.HEADER}Search Chat History{Colors.ENDC}")
+    keyword = input(f"{Colors.OKCYAN}Enter search keyword: {Colors.ENDC}")
+    
+    if not keyword.strip():
+        print(f"{Colors.WARNING}No keyword entered.{Colors.ENDC}")
+        return
+    
+    results = []
+    print(f"\n{Colors.OKGREEN}Searching...{Colors.ENDC}\n")
+    
+    for file in os.listdir("chats"):
+        if file.endswith(".elham"):
+            chatID = file.split('.elham')[0]
+            try:
+                with open(f"chats/{chatID}.json", 'r') as f:
+                    chatConfig = json.load(f)
+                
+                messages = chatConfig.get('message_history', [])
+                for msg in messages:
+                    if keyword.lower() in msg.get("content", "").lower():
+                        results.append({
+                            "chat_id": chatID,
+                            "chat_name": chatConfig.get('custom_name', chatID),
+                            "role": msg.get("role"),
+                            "content": msg.get("content", "")[:100] + "...",
+                            "timestamp": msg.get("timestamp", "Unknown")
+                        })
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
+    
+    if results:
+        print(f"{Colors.OKGREEN}Found {len(results)} results:{Colors.ENDC}\n")
+        for i, result in enumerate(results, 1):
+            print(f"{Colors.OKBLUE}[{i}]{Colors.ENDC} {Colors.OKCYAN}{result['chat_name']}{Colors.ENDC}")
+            print(f"    Role: {result['role']}")
+            print(f"    Time: {result['timestamp']}")
+            print(f"    Content: {result['content']}")
+            print()
+    else:
+        print(f"{Colors.WARNING}No results found.{Colors.ENDC}")
+
+def exportChat(chatFile):
+    chatID = chatFile.split('.elham')[0]
+    
+    try:
+        with open(f"chats/{chatID}.json", 'r') as f:
+            chatConfig = json.load(f)
+        
+        print(f"\n{Colors.HEADER}Export Chat{Colors.ENDC}")
+        print(f"{Colors.OKCYAN}Select format:{Colors.ENDC}")
+        print(f"  1. JSON (structured)")
+        print(f"  2. Text (readable)")
+        
+        choice = input(f"\n{Colors.OKCYAN}Choice (1-2): {Colors.ENDC}")
+        
+        if choice == '1':
+            export_data = {
+                "chat_id": chatID,
+                "metadata": {
+                    "custom_name": chatConfig.get('custom_name'),
+                    "model": chatConfig.get('model'),
+                    "created_at": chatConfig.get('created_at'),
+                    "custom_prompt": chatConfig.get('custom_prompt')
+                },
+                "message_history": chatConfig.get('message_history', [])
+            }
+            filename = f"export_{chatID}.json"
+            with open(filename, 'w') as f:
+                json.dump(export_data, f, indent=2)
+            print(f"{Colors.OKGREEN}Exported to {filename}{Colors.ENDC}")
+            
+        elif choice == '2':
+            filename = f"export_{chatID}.txt"
+            with open(filename, 'w') as f:
+                f.write(f"Chat ID: {chatID}\n")
+                f.write(f"Name: {chatConfig.get('custom_name', chatID)}\n")
+                f.write(f"Created: {chatConfig.get('created_at', 'Unknown')}\n")
+                f.write(f"Model: {chatConfig.get('model', 'Unknown')}\n")
+                f.write("=" * 60 + "\n\n")
+
+                for msg in chatConfig.get('message_history', []):
+                    role = "USER" if msg.get("role") == "user" else "AI"
+                    timestamp = msg.get("timestamp", "").split(".")[0].replace("T", " ")
+                    f.write(f"[{role}] {timestamp}\n")
+                    f.write(f"{msg.get('content', '')}\n")
+                    f.write("-" * 40 + "\n")
+            
+            print(f"{Colors.OKGREEN}Exported to {filename}{Colors.ENDC}")
+            
+    except (FileNotFoundError, json.JSONDecodeError):
+        print(f"{Colors.FAIL}Could not export chat.{Colors.ENDC}")
 
 with open("VERSION", "r") as versionFile:
     currentVersion = versionFile.read().strip()
@@ -151,6 +274,9 @@ def menu():
         autoCompletionChat.append(f"{str(i)} delete")
         autoCompletionChat.append(f"{str(i)} info")
         autoCompletionChat.append(f"{str(i)} model")
+        autoCompletionChat.append(f"{str(i)} export")
+        autoCompletionChat.append(f"{str(i)} stats")
+        autoCompletionChat.append(f"{str(i)} search")
     chatCompleter = WordCompleter(autoCompletionChat, ignore_case=True, sentence=True)
     session = PromptSession(completer=chatCompleter)
     rawChoice = session.prompt(ANSI(f"{Colors.OKCYAN}>>>: {Colors.ENDC} "))
@@ -189,6 +315,21 @@ def menu():
                 elif action == "model":
                     with open(f"chats/{chats[idx].split('.elham')[0]}.json", 'r') as indexFile:
                         settings = json.loads(indexFile.read())
+                elif action == "export":
+                    exportChat(chats[idx])
+                    input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
+                    os.system("cls")
+                    menu()
+                elif action == "stats":
+                    displayChatInfo(chats[idx])
+                    input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
+                    os.system("cls")
+                    menu()
+                elif action == "search":
+                    chatSearch()
+                    input(f"{Colors.WARNING}Press Enter to continue...{Colors.ENDC}")
+                    os.system("cls")
+                    menu()
                 time.sleep(1)
                 menu()
             elif idx == x + 1:
@@ -409,8 +550,6 @@ while True:
             localVars = {}
             try:
                 codeToExec = cmd['command']
-                if isinstance(codeToExec, str):
-                    codeToExec = codeToExec.encode().decode('unicode_escape')
                 stdoutCapture = io.StringIO()
                 stderrCapture = io.StringIO()
                 compiledCode = compile(codeToExec, '<string>', 'exec')
